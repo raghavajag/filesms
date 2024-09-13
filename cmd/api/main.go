@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	database "filesms/db"
+	"filesms/internal/core/services/authsrv"
+	"filesms/internal/handlers/authhdl"
 	"filesms/internal/repositories/filerepo"
 	"filesms/internal/repositories/userrepo"
 	"log"
@@ -13,15 +15,24 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	db, err := sql.Open("postgres", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("Error connecting to the database: %v", err)
 	}
 
+	if err = db.Ping(); err != nil {
+		log.Fatal(err)
+	}
 	defer db.Close()
 
 	// Run migrations
@@ -31,14 +42,23 @@ func main() {
 	}
 
 	// Initialize repositories
-	_ = userrepo.NewPostgresUserRepository(db)
+	userRepo := userrepo.NewPostgresUserRepository(db)
 	_ = filerepo.NewPostgresFileRepository(db)
+
+	// Initialize services
+	authService := authsrv.NewAuthService(userRepo)
+
+	// Initialize handlers
+	authHandler := authhdl.NewAuthHandler(authService)
 
 	router := http.NewServeMux()
 
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	// Define routes
+	router.HandleFunc("/register", authHandler.Register)
 
 	// Define routes
 	srv := &http.Server{

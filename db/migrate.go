@@ -1,9 +1,12 @@
-package database
+package db
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+
+	"github.com/joho/godotenv"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -11,13 +14,18 @@ import (
 )
 
 func RunMigrations(db *sql.DB) error {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file")
+	}
+
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("could not create the postgres driver: %v", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://db/migrations",
+		os.Getenv("MIGRATION_DIR"),
 		"postgres", driver)
 	if err != nil {
 		return fmt.Errorf("could not create the migrate instance: %v", err)
