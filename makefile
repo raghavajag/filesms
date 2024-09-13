@@ -16,3 +16,8 @@ build:
 run:
 	@echo "Running $(APP_NAME)..."
 	@go run $(MAIN_FILE)
+
+migrate:
+	@echo "Running database migrations..."
+	@go run ./db/migrations/migrate.go
+	@echo "Migrations completed."

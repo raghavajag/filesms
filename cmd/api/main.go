@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	database "filesms/db"
 	"filesms/internal/repositories/filerepo"
 	"filesms/internal/repositories/userrepo"
 	"log"
@@ -16,12 +17,18 @@ import (
 )
 
 func main() {
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	db, err := sql.Open("postgres", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
 	if err != nil {
 		log.Fatalf("Error connecting to the database: %v", err)
 	}
 
 	defer db.Close()
+
+	// Run migrations
+	err = database.RunMigrations(db)
+	if err != nil {
+		log.Fatalf("Could not run migrations: %v", err)
+	}
 
 	// Initialize repositories
 	_ = userrepo.NewPostgresUserRepository(db)
