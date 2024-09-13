@@ -8,11 +8,15 @@ import (
 	"filesms/internal/handlers/authhdl"
 	"filesms/internal/repositories/filerepo"
 	"filesms/internal/repositories/userrepo"
+	"filesms/pkg/jwt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	_ "github.com/dgrijalva/jwt-go"
+
 	"time"
 
 	"github.com/joho/godotenv"
@@ -45,8 +49,11 @@ func main() {
 	userRepo := userrepo.NewPostgresUserRepository(db)
 	_ = filerepo.NewPostgresFileRepository(db)
 
+	// Create JWT maker
+	jwtMaker := jwt.NewJWTMaker(os.Getenv("JWT_SECRET"))
+
 	// Initialize services
-	authService := authsrv.NewAuthService(userRepo)
+	authService := authsrv.NewAuthService(userRepo, jwtMaker)
 
 	// Initialize handlers
 	authHandler := authhdl.NewAuthHandler(authService)
@@ -59,7 +66,7 @@ func main() {
 
 	// Define routes
 	router.HandleFunc("/register", authHandler.Register)
-
+	router.HandleFunc("/login", authHandler.Login)
 	// Define routes
 	srv := &http.Server{
 		Addr:    ":8080",

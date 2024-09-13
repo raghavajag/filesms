@@ -2,10 +2,13 @@ package authsrv
 
 import (
 	"context"
+	"errors"
 	"filesms/internal/core/domain"
 	"filesms/internal/core/ports"
 	"fmt"
 	"time"
+
+	"filesms/pkg/jwt"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -13,11 +16,13 @@ import (
 
 type AuthService struct {
 	userRepo ports.UserRepository
+	jwtMaker jwt.Maker
 }
 
-func NewAuthService(userRepo ports.UserRepository) *AuthService {
+func NewAuthService(userRepo ports.UserRepository, jwtMaker jwt.Maker) *AuthService {
 	return &AuthService{
 		userRepo: userRepo,
+		jwtMaker: jwtMaker,
 	}
 }
 func (s *AuthService) Register(ctx context.Context, email, password string) (*domain.User, error) {
@@ -39,4 +44,21 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (*do
 	}
 
 	return user, nil
+}
+func (s *AuthService) Login(ctx context.Context, email, password string) (string, error) {
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return "", errors.New("invalid credentials")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return "", errors.New("invalid credentials")
+	}
+
+	token, err := s.jwtMaker.CreateToken(user.ID, time.Hour*24)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
