@@ -103,3 +103,6 @@ func (s *FileService) ShareFile(ctx context.Context, fileID uuid.UUID, userID uu
 
 	return shareURL, nil
 }
+func (s *FileService) SearchFiles(ctx context.Context, userID uuid.UUID, params domain.FileSearchParams) ([]*domain.File, error) {
+	return s.fileRepo.Search(ctx, userID, params)
+}

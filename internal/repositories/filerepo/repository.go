@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"filesms/internal/core/domain"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -77,4 +78,74 @@ func (r *postgresFileRepository) GetFileIDBySharedURL(ctx context.Context, url s
 		return uuid.Nil, err
 	}
 	return fileID, nil
+}
+func (r *postgresFileRepository) Search(ctx context.Context, userID uuid.UUID, params domain.FileSearchParams) ([]*domain.File, error) {
+	query := `
+		SELECT id, user_id, name, size, type, url, created_at, updated_at
+		FROM files
+		WHERE user_id = $1
+	`
+	args := []interface{}{userID}
+	argCount := 1
+
+	if params.Query != "" {
+		argCount++
+		query += fmt.Sprintf(" AND name ILIKE $%d", argCount)
+		args = append(args, "%"+params.Query+"%")
+	}
+
+	if params.FileType != "" {
+		argCount++
+		query += fmt.Sprintf(" AND type = $%d", argCount)
+		args = append(args, params.FileType)
+	}
+
+	if !params.FromDate.IsZero() {
+		argCount++
+		query += fmt.Sprintf(" AND created_at >= $%d", argCount)
+		args = append(args, params.FromDate)
+	}
+
+	if !params.ToDate.IsZero() {
+		argCount++
+		query += fmt.Sprintf(" AND created_at <= $%d", argCount)
+		args = append(args, params.ToDate)
+	}
+
+	// Add sorting
+	if params.SortBy != "" {
+		query += fmt.Sprintf(" ORDER BY %s %s", params.SortBy, params.SortDir)
+	} else {
+		query += " ORDER BY created_at DESC"
+	}
+
+	// Add pagination
+	if params.Limit > 0 {
+		argCount++
+		query += fmt.Sprintf(" LIMIT $%d", argCount)
+		args = append(args, params.Limit)
+	}
+	if params.Offset > 0 {
+		argCount++
+		query += fmt.Sprintf(" OFFSET $%d", argCount)
+		args = append(args, params.Offset)
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []*domain.File
+	for rows.Next() {
+		var file domain.File
+		err := rows.Scan(&file.ID, &file.UserID, &file.Name, &file.Size, &file.Type, &file.URL, &file.CreatedAt, &file.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, &file)
+	}
+
+	return files, nil
 }

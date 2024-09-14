@@ -88,6 +88,7 @@ func main() {
 	router.HandleFunc("/upload", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.Upload)))
 	router.HandleFunc("/files", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.GetFiles)))
 	router.HandleFunc("/share", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.ShareFile)))
+	router.HandleFunc("/files/search", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.SearchFiles)))
 	// Define routes
 	srv := &http.Server{
 		Addr:    ":8080",

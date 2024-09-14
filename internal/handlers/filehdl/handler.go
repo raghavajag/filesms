@@ -2,11 +2,13 @@ package filehdl
 
 import (
 	"encoding/json"
+	"filesms/internal/core/domain"
 	"filesms/internal/core/services/filesrv"
 	"filesms/pkg/errors"
 	"filesms/pkg/middleware"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -72,4 +74,41 @@ func (h *FileHandler) ShareFile(w http.ResponseWriter, r *http.Request) error {
 
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(map[string]string{"share_url": shareURL})
+}
+func (h *FileHandler) SearchFiles(w http.ResponseWriter, r *http.Request) error {
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+	if !ok {
+		return errors.NewAPIError(http.StatusUnauthorized, "Unauthorized", nil)
+	}
+
+	params := domain.FileSearchParams{
+		Query:    r.URL.Query().Get("query"),
+		FileType: r.URL.Query().Get("type"),
+		SortBy:   r.URL.Query().Get("sort_by"),
+		SortDir:  r.URL.Query().Get("sort_dir"),
+	}
+
+	if fromDate := r.URL.Query().Get("from"); fromDate != "" {
+		params.FromDate, _ = time.Parse(time.RFC3339, fromDate)
+	}
+
+	if toDate := r.URL.Query().Get("to"); toDate != "" {
+		params.ToDate, _ = time.Parse(time.RFC3339, toDate)
+	}
+
+	if limit := r.URL.Query().Get("limit"); limit != "" {
+		params.Limit, _ = strconv.Atoi(limit)
+	}
+
+	if offset := r.URL.Query().Get("offset"); offset != "" {
+		params.Offset, _ = strconv.Atoi(offset)
+	}
+
+	files, err := h.fileService.SearchFiles(r.Context(), userID, params)
+	if err != nil {
+		return errors.NewAPIError(http.StatusInternalServerError, "Failed to search files", err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(files)
 }
