@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	database "filesms/db"
 	"filesms/internal/core/services/authsrv"
+	"filesms/internal/core/services/cleanupservice"
 	"filesms/internal/core/services/filesrv"
 	"filesms/internal/handlers/authhdl"
 	"filesms/internal/handlers/filehdl"
@@ -67,6 +68,12 @@ func main() {
 	authService := authsrv.NewAuthService(userRepo, jwtMaker)
 	baseURL := "http://localhost:8080/files"
 	fileService := filesrv.NewFileService(fileRepo, localStorage, baseURL)
+
+	// Initialize and start cleanup service
+	cleanupService := cleanupservice.NewCleanupService(fileRepo, "./tmp", 24*time.Hour)
+	go func() {
+		cleanupService.Start(context.Background())
+	}()
 
 	// Initialize handlers
 	authHandler := authhdl.NewAuthHandler(authService)
