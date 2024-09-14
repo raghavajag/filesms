@@ -3,7 +3,6 @@ package ports
 import (
 	"context"
 	"filesms/internal/core/domain"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -18,10 +17,10 @@ type UserRepository interface {
 
 type FileRepository interface {
 	Create(ctx context.Context, file *domain.File) error
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.File, error)
-	GetByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.File, error)
-	Update(ctx context.Context, file *domain.File) error
-	Delete(ctx context.Context, id uuid.UUID) error
-	Search(ctx context.Context, userID uuid.UUID, query string, fileType string, fromDate, toDate time.Time) ([]*domain.File, error)
-	GetExpiredFiles(ctx context.Context, expirationDate time.Time) ([]*domain.File, error)
+	// GetByID(ctx context.Context, id uuid.UUID) (*domain.File, error)
+	// GetByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.File, error)
+	// Update(ctx context.Context, file *domain.File) error
+	// Delete(ctx context.Context, id uuid.UUID) error
+	// Search(ctx context.Context, userID uuid.UUID, query string, fileType string, fromDate, toDate time.Time) ([]*domain.File, error)
+	// GetExpiredFiles(ctx context.Context, expirationDate time.Time) ([]*domain.File, error)
 }

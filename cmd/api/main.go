@@ -5,11 +5,14 @@ import (
 	"database/sql"
 	database "filesms/db"
 	"filesms/internal/core/services/authsrv"
+	"filesms/internal/core/services/filesrv"
 	"filesms/internal/handlers/authhdl"
+	"filesms/internal/handlers/filehdl"
 	"filesms/internal/repositories/filerepo"
 	"filesms/internal/repositories/userrepo"
 	"filesms/pkg/jwt"
 	"filesms/pkg/middleware"
+	"filesms/pkg/storage"
 	"log"
 	"net/http"
 	"os"
@@ -48,17 +51,28 @@ func main() {
 
 	// Initialize repositories
 	userRepo := userrepo.NewPostgresUserRepository(db)
-	_ = filerepo.NewPostgresFileRepository(db)
+	fileRepo := filerepo.NewPostgresFileRepository(db)
 
 	// Create JWT maker
 	jwtMaker := jwt.NewJWTMaker(os.Getenv("JWT_SECRET"))
 
+	// Initialize local storage
+	storagePath := os.Getenv("STORAGE_PATH")
+	localStorage, err := storage.NewLocalStorage(storagePath)
+	if err != nil {
+		log.Fatalf("Error initializing local storage: %v", err)
+	}
+
 	// Initialize services
 	authService := authsrv.NewAuthService(userRepo, jwtMaker)
+	baseURL := "http://localhost:8080/files"
+	fileService := filesrv.NewFileService(fileRepo, localStorage, baseURL)
 
 	// Initialize handlers
 	authHandler := authhdl.NewAuthHandler(authService)
 
+	// Initialize handlers
+	fileHandler := filehdl.NewFileHandler(fileService)
 	router := http.NewServeMux()
 
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -71,6 +85,7 @@ func main() {
 
 	// Define Protedted routes
 	router.HandleFunc("/me", middleware.AuthMiddleware(middleware.ErrorHandler(authHandler.Me)))
+	router.HandleFunc("/upload", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.Upload)))
 	// Define routes
 	srv := &http.Server{
 		Addr:    ":8080",

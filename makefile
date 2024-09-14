@@ -19,5 +19,5 @@ run:
 
 migrate:
 	@echo "Running database migrations..."
-	@go run ./db/migrations/migrate.go
+	@go run ./db/migrate.go
 	@echo "Migrations completed."
