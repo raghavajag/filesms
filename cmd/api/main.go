@@ -11,6 +11,8 @@ import (
 	"filesms/internal/handlers/filehdl"
 	"filesms/internal/repositories/filerepo"
 	"filesms/internal/repositories/userrepo"
+
+	redisStore "filesms/pkg/cache/redis"
 	"filesms/pkg/jwt"
 	"filesms/pkg/middleware"
 	"filesms/pkg/storage"
@@ -19,13 +21,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	_ "github.com/dgrijalva/jwt-go"
-
 	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -49,6 +49,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not run migrations: %v", err)
 	}
+
+	// Initialize Redis client
+	redisAddr := os.Getenv("REDIS_ADDR")
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
+		log.Fatalf("Error connecting to Redis: %v", err)
+	}
+	log.Println("Connected to Redis...")
+	// Create Redis cache
+	_ = redisStore.NewRedisCache(redisClient)
 
 	// Initialize repositories
 	userRepo := userrepo.NewPostgresUserRepository(db)
