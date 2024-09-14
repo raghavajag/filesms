@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"filesms/internal/core/domain"
+
+	"github.com/google/uuid"
 )
 
 type postgresUserRepository struct {
@@ -19,12 +21,12 @@ func (r *postgresUserRepository) Create(ctx context.Context, user *domain.User) 
 	err := r.db.QueryRowContext(ctx, query, user.ID, user.Email, user.Password, user.CreatedAt, user.UpdatedAt).Scan(&user.ID)
 	return err
 }
-func (r *postgresUserRepository) Delete(ctx context.Context, id uint) error {
+func (r *postgresUserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }
-func (r *postgresUserRepository) GetByID(ctx context.Context, id uint) (*domain.User, error) {
+func (r *postgresUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	query := `SELECT id, email, password, created_at, updated_at FROM users WHERE id = $1`
 	var user domain.User
 	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)

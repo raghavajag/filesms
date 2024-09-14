@@ -68,6 +68,9 @@ func main() {
 	// Define routes
 	router.HandleFunc("/register", middleware.ErrorHandler(authHandler.Register))
 	router.HandleFunc("/login", middleware.ErrorHandler(authHandler.Login))
+
+	// Define Protedted routes
+	router.HandleFunc("/me", middleware.AuthMiddleware(middleware.ErrorHandler(authHandler.Me)))
 	// Define routes
 	srv := &http.Server{
 		Addr:    ":8080",

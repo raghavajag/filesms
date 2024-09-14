@@ -60,3 +60,6 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 
 	return token, nil
 }
+func (s *AuthService) Me(ctx context.Context, userID uuid.UUID) (*domain.User, error) {
+	return s.userRepo.GetByID(ctx, userID)
+}
