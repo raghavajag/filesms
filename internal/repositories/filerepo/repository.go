@@ -6,6 +6,8 @@ import (
 	"errors"
 	"filesms/internal/core/domain"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -147,5 +149,48 @@ func (r *postgresFileRepository) Search(ctx context.Context, userID uuid.UUID, p
 		files = append(files, &file)
 	}
 
+	return files, nil
+}
+func (r *postgresFileRepository) DeleteFiles(ctx context.Context, fileIDs []uuid.UUID) error {
+	// Convert UUID slice to PostgreSQL array format
+	pgArray := convertUUIDsToPGArray(fileIDs)
+
+	query := `DELETE FROM files WHERE id = ANY($1)`
+	_, err := r.db.ExecContext(ctx, query, pgArray)
+	return err
+}
+
+// Helper function to convert UUID slice to PostgreSQL array format
+func convertUUIDsToPGArray(uuids []uuid.UUID) string {
+	uuidStrings := make([]string, len(uuids))
+	for i, uuid := range uuids {
+		uuidStrings[i] = uuid.String()
+	}
+	return fmt.Sprintf("{%s}", strings.Join(uuidStrings, ","))
+}
+func (r *postgresFileRepository) GetExpiredFiles(ctx context.Context) ([]*domain.File, error) {
+	query := `
+        SELECT id, user_id, name, size, type, url, expiration_date, created_at, updated_at
+        FROM files
+        WHERE expiration_date < $1
+    `
+	rows, err := r.db.QueryContext(ctx, query, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []*domain.File
+	for rows.Next() {
+		var file domain.File
+		err := rows.Scan(
+			&file.ID, &file.UserID, &file.Name, &file.Size, &file.Type, &file.URL,
+			&file.ExpirationDate, &file.CreatedAt, &file.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, &file)
+	}
 	return files, nil
 }

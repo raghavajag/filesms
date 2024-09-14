@@ -6,3 +6,6 @@ UPDATE files SET expiration_date = created_at + INTERVAL '30 days' WHERE expirat
 
 -- Make expiration_date NOT NULL after updating existing records
 ALTER TABLE files ALTER COLUMN expiration_date SET NOT NULL;
+
+ALTER TABLE files
+ALTER COLUMN expiration_date SET DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 days'); 

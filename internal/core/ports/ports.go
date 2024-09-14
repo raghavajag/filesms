@@ -21,8 +21,8 @@ type FileRepository interface {
 	GetByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.File, error)
 	SaveSharedFileURL(ctx context.Context, sharedFileURL *domain.SharedFileURL) error
 	Search(ctx context.Context, userID uuid.UUID, params domain.FileSearchParams) ([]*domain.File, error)
-	// GetExpiredFiles(ctx context.Context) ([]*domain.File, error)
-	// DeleteFiles(ctx context.Context, fileIDs []uint) error
+	GetExpiredFiles(ctx context.Context) ([]*domain.File, error)
+	DeleteFiles(ctx context.Context, fileIDs []uuid.UUID) error
 	// Update(ctx context.Context, file *domain.File) error
 	// Delete(ctx context.Context, id uuid.UUID) error
 }

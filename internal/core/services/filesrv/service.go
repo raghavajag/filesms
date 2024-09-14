@@ -33,20 +33,20 @@ func NewFileService(fileRepo ports.FileRepository, storage *storage.LocalStorage
 func (s *FileService) Upload(ctx context.Context, userID uuid.UUID, fileName string, content io.Reader, fileSize int64) (*domain.File, error) {
 	// Generate a unique filename
 	uniqueFileName := fmt.Sprintf("%d_%s", time.Now().UnixNano(), fileName)
-	fmt.Println(uniqueFileName)
 	// Save the file to local storage
-	filePath, err := s.storage.Save(uniqueFileName, content)
+	_, err := s.storage.Save(uniqueFileName, content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save file: %w", err)
 	}
 
+	fmt.Println("File saved! ", uniqueFileName)
 	// Create file metadata
 	file := &domain.File{
 		UserID:    userID,
 		Name:      fileName,
 		Size:      fileSize,
 		Type:      filepath.Ext(fileName),
-		URL:       filePath,
+		URL:       uniqueFileName,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		ID:        uuid.New(),
@@ -54,6 +54,7 @@ func (s *FileService) Upload(ctx context.Context, userID uuid.UUID, fileName str
 
 	// Save file metadata to database
 	err = s.fileRepo.Create(ctx, file)
+	fmt.Println(err)
 	if err != nil {
 		// If database insert fails, delete the file from storage
 		_ = s.storage.Delete(uniqueFileName)

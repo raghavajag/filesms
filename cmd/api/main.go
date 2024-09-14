@@ -69,8 +69,8 @@ func main() {
 	baseURL := "http://localhost:8080/files"
 	fileService := filesrv.NewFileService(fileRepo, localStorage, baseURL)
 
-	// Initialize and start cleanup service
-	cleanupService := cleanupservice.NewCleanupService(fileRepo, "./tmp", 24*time.Hour)
+	// Initialize and start cleanup service, (10 seconds for testing)
+	cleanupService := cleanupservice.NewCleanupService(fileRepo, "./tmp", 10*time.Second)
 	go func() {
 		cleanupService.Start(context.Background())
 	}()
