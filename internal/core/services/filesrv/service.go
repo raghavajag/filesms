@@ -46,6 +46,7 @@ func (s *FileService) Upload(ctx context.Context, userID uuid.UUID, fileName str
 		URL:       filePath,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+		ID:        uuid.New(),
 	}
 
 	// Save file metadata to database
@@ -57,4 +58,11 @@ func (s *FileService) Upload(ctx context.Context, userID uuid.UUID, fileName str
 	}
 
 	return file, nil
+}
+func (s *FileService) GetFiles(ctx context.Context, userID uuid.UUID) ([]*domain.File, error) {
+	return s.fileRepo.GetByUserID(ctx, userID)
+}
+
+func (s *FileService) GetFileByID(ctx context.Context, fileID uuid.UUID) (*domain.File, error) {
+	return s.fileRepo.GetByID(ctx, fileID)
 }

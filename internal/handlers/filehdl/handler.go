@@ -35,3 +35,14 @@ func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(uploadedFile)
 }
+func (h *FileHandler) GetFiles(w http.ResponseWriter, r *http.Request) error {
+	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+
+	files, err := h.fileService.GetFiles(r.Context(), userID)
+	if err != nil {
+		return errors.NewAPIError(http.StatusInternalServerError, "Failed to get files", nil)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(files)
+}

@@ -86,6 +86,8 @@ func main() {
 	// Define Protedted routes
 	router.HandleFunc("/me", middleware.AuthMiddleware(middleware.ErrorHandler(authHandler.Me)))
 	router.HandleFunc("/upload", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.Upload)))
+	router.HandleFunc("/files", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.GetFiles)))
+
 	// Define routes
 	srv := &http.Server{
 		Addr:    ":8080",
