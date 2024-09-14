@@ -9,6 +9,7 @@ import (
 	"filesms/internal/repositories/filerepo"
 	"filesms/internal/repositories/userrepo"
 	"filesms/pkg/jwt"
+	"filesms/pkg/middleware"
 	"log"
 	"net/http"
 	"os"
@@ -65,8 +66,8 @@ func main() {
 	})
 
 	// Define routes
-	router.HandleFunc("/register", authHandler.Register)
-	router.HandleFunc("/login", authHandler.Login)
+	router.HandleFunc("/register", middleware.ErrorHandler(authHandler.Register))
+	router.HandleFunc("/login", middleware.ErrorHandler(authHandler.Login))
 	// Define routes
 	srv := &http.Server{
 		Addr:    ":8080",

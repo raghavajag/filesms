@@ -5,7 +5,6 @@ import (
 	"errors"
 	"filesms/internal/core/domain"
 	"filesms/internal/core/ports"
-	"fmt"
 	"time"
 
 	"filesms/pkg/jwt"
@@ -38,7 +37,6 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (*do
 		UpdatedAt: time.Now(),
 		ID:        uuid.New(),
 	}
-	fmt.Printf("%+v", user)
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, err
 	}
