@@ -2,6 +2,9 @@ package filesrv
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
 	"filesms/internal/core/domain"
 	"filesms/internal/core/ports"
 	"filesms/pkg/storage"
@@ -65,4 +68,38 @@ func (s *FileService) GetFiles(ctx context.Context, userID uuid.UUID) ([]*domain
 
 func (s *FileService) GetFileByID(ctx context.Context, fileID uuid.UUID) (*domain.File, error) {
 	return s.fileRepo.GetByID(ctx, fileID)
+}
+func (s *FileService) ShareFile(ctx context.Context, fileID uuid.UUID, userID uuid.UUID, expirationTime time.Duration) (string, error) {
+	file, err := s.fileRepo.GetByID(ctx, fileID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get file: %w", err)
+	}
+
+	if file.UserID != userID {
+		return "", errors.New("unauthorized access to file")
+	}
+
+	// Generate a unique token for the shared URL
+	token := make([]byte, 16)
+	if _, err := rand.Read(token); err != nil {
+		return "", fmt.Errorf("failed to generate token: %w", err)
+	}
+	shareToken := hex.EncodeToString(token)
+
+	shareURL := fmt.Sprintf("%s/share/%s", s.baseURL, shareToken)
+
+	// Save the shared URL with expiration
+	sharedFileURL := &domain.SharedFileURL{
+		FileID:    file.ID,
+		URL:       shareURL,
+		ExpiresAt: time.Now().Add(expirationTime),
+		CreatedAt: time.Now(),
+	}
+
+	err = s.fileRepo.SaveSharedFileURL(ctx, sharedFileURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to save shared URL: %w", err)
+	}
+
+	return shareURL, nil
 }

@@ -61,3 +61,20 @@ func (r *postgresFileRepository) GetByUserID(ctx context.Context, userID uuid.UU
 	}
 	return files, nil
 }
+func (r *postgresFileRepository) SaveSharedFileURL(ctx context.Context, sharedFileURL *domain.SharedFileURL) error {
+	query := `INSERT INTO shared_file_urls (file_id, url, expires_at, created_at) VALUES ($1, $2, $3, $4)`
+	_, err := r.db.ExecContext(ctx, query, sharedFileURL.FileID, sharedFileURL.URL, sharedFileURL.ExpiresAt, sharedFileURL.CreatedAt)
+	return err
+}
+func (r *postgresFileRepository) GetFileIDBySharedURL(ctx context.Context, url string) (uuid.UUID, error) {
+	query := `SELECT file_id FROM shared_file_urls WHERE url = $1 AND expires_at > NOW()`
+	var fileID uuid.UUID
+	err := r.db.QueryRowContext(ctx, query, url).Scan(&fileID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return uuid.Nil, errors.New("shared URL not found or expired")
+		}
+		return uuid.Nil, err
+	}
+	return fileID, nil
+}
