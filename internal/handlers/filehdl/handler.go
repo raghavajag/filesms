@@ -6,7 +6,6 @@ import (
 	"filesms/internal/core/services/filesrv"
 	"filesms/pkg/errors"
 	"filesms/pkg/middleware"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -44,7 +43,7 @@ func (h *FileHandler) GetFiles(w http.ResponseWriter, r *http.Request) error {
 
 	files, err := h.fileService.GetFiles(r.Context(), userID)
 	if err != nil {
-		return errors.NewAPIError(http.StatusInternalServerError, "Failed to get files", nil)
+		return errors.NewAPIError(http.StatusInternalServerError, "Failed to get files", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -54,7 +53,6 @@ func (h *FileHandler) ShareFile(w http.ResponseWriter, r *http.Request) error {
 	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	fileIDStr := r.URL.Query().Get("file_id")
 	fileID, err := uuid.Parse(fileIDStr)
-	fmt.Println(fileID)
 	if err != nil {
 		return errors.NewAPIError(http.StatusBadRequest, "Invalid file ID", err)
 	}
@@ -111,4 +109,25 @@ func (h *FileHandler) SearchFiles(w http.ResponseWriter, r *http.Request) error 
 
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(files)
+}
+
+func (h *FileHandler) GetFile(w http.ResponseWriter, r *http.Request) error {
+	userId := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+	fileIDStr := r.URL.Query().Get("file_id")
+	fileID, err := uuid.Parse(fileIDStr)
+	if err != nil {
+		return errors.NewAPIError(http.StatusBadRequest, "Invalid file ID", err)
+	}
+
+	file, err := h.fileService.GetFile(r.Context(), fileID)
+	if err != nil {
+		return errors.NewAPIError(http.StatusInternalServerError, "Failed to get file", err)
+	}
+
+	if userId != file.UserID {
+		return errors.NewAPIError(http.StatusUnauthorized, "Unauthorized access to file", nil)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(file)
 }

@@ -42,7 +42,7 @@ func (s *CleanupService) Start(ctx context.Context) {
 }
 
 func (s *CleanupService) cleanupExpiredFiles(ctx context.Context) {
-	fmt.Println("Checking for expired files...(every 24 hours)")
+	// fmt.Println("Checking for expired files...(every 10 seconds)")
 	expiredFiles, err := s.fileRepo.GetExpiredFiles(ctx)
 	if err != nil {
 		log.Printf("Error getting expired files: %v", err)

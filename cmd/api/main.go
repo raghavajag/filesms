@@ -63,7 +63,7 @@ func main() {
 	}
 	log.Println("Connected to Redis...")
 	// Create Redis cache
-	_ = redisStore.NewRedisCache(redisClient)
+	redisCache := redisStore.NewRedisCache(redisClient)
 
 	// Initialize repositories
 	userRepo := userrepo.NewPostgresUserRepository(db)
@@ -82,7 +82,7 @@ func main() {
 	// Initialize services
 	authService := authsrv.NewAuthService(userRepo, jwtMaker)
 	baseURL := "http://localhost:8080/files"
-	fileService := filesrv.NewFileService(fileRepo, localStorage, baseURL)
+	fileService := filesrv.NewFileService(fileRepo, localStorage, baseURL, redisCache)
 
 	// Initialize and start cleanup service, (10 seconds for testing)
 	cleanupService := cleanupservice.NewCleanupService(fileRepo, "./tmp", 10*time.Second)
@@ -111,6 +111,8 @@ func main() {
 	router.HandleFunc("/files", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.GetFiles)))
 	router.HandleFunc("/share", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.ShareFile)))
 	router.HandleFunc("/files/search", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.SearchFiles)))
+	router.HandleFunc("/file", middleware.AuthMiddleware(middleware.ErrorHandler(fileHandler.GetFile)))
+
 	// Define routes
 	srv := &http.Server{
 		Addr:    ":8080",

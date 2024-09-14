@@ -7,9 +7,11 @@ import (
 	"errors"
 	"filesms/internal/core/domain"
 	"filesms/internal/core/ports"
+	"filesms/pkg/cache/redis"
 	"filesms/pkg/storage"
 	"fmt"
 	"io"
+	"log"
 	"path/filepath"
 	"time"
 
@@ -20,13 +22,15 @@ type FileService struct {
 	fileRepo ports.FileRepository
 	storage  *storage.LocalStorage
 	baseURL  string
+	cache    *redis.RedisCache
 }
 
-func NewFileService(fileRepo ports.FileRepository, storage *storage.LocalStorage, baseURL string) *FileService {
+func NewFileService(fileRepo ports.FileRepository, storage *storage.LocalStorage, baseURL string, cache *redis.RedisCache) *FileService {
 	return &FileService{
 		fileRepo: fileRepo,
 		storage:  storage,
 		baseURL:  baseURL,
+		cache:    cache,
 	}
 }
 
@@ -63,8 +67,31 @@ func (s *FileService) Upload(ctx context.Context, userID uuid.UUID, fileName str
 
 	return file, nil
 }
-func (s *FileService) GetFiles(ctx context.Context, userID uuid.UUID) ([]*domain.File, error) {
-	return s.fileRepo.GetByUserID(ctx, userID)
+func (s *FileService) GetFile(ctx context.Context, fileID uuid.UUID) (*domain.File, error) {
+	cacheKey := fmt.Sprintf("file:%d", fileID)
+
+	// Try to get the file from cache
+	var file domain.File
+	err := s.cache.Get(ctx, cacheKey, &file)
+	if err == nil {
+		log.Printf("File found in cache: %v\n", file.URL)
+		return &file, nil
+	}
+	log.Printf("File not found in cache: %v\n", file.URL)
+
+	// If not in cache, get from database
+	filePtr, err := s.fileRepo.GetByID(ctx, fileID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the file metadata for 5 minutes
+	err = s.cache.Set(ctx, cacheKey, filePtr, 5*time.Minute)
+	if err != nil {
+		fmt.Printf("Error caching file metadata: %v\n", err)
+	}
+	log.Printf("Caching file metadata for 5 minutes: %v\n", filePtr.URL)
+	return filePtr, nil
 }
 
 func (s *FileService) GetFileByID(ctx context.Context, fileID uuid.UUID) (*domain.File, error) {
@@ -106,4 +133,7 @@ func (s *FileService) ShareFile(ctx context.Context, fileID uuid.UUID, userID uu
 }
 func (s *FileService) SearchFiles(ctx context.Context, userID uuid.UUID, params domain.FileSearchParams) ([]*domain.File, error) {
 	return s.fileRepo.Search(ctx, userID, params)
+}
+func (s *FileService) GetFiles(ctx context.Context, userID uuid.UUID) ([]*domain.File, error) {
+	return s.fileRepo.GetByUserID(ctx, userID)
 }
