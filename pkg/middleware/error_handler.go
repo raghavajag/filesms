@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	response "filesms/pkg/api"
 	"filesms/pkg/errors"
 	"log"
 	"net/http"
@@ -11,20 +12,20 @@ import (
 type ErrorHandlerFunc func(http.ResponseWriter, *http.Request) error
 
 func ErrorHandler(next ErrorHandlerFunc) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := next(w, r)
 		if err != nil {
 			log.Printf("Error: %v", err)
-			var apiErr errors.APIError
 			switch e := err.(type) {
 			case validator.ValidationErrors:
-				apiErr = errors.HandleValidationErrors(e)
+				apiErr := errors.HandleValidationErrors(e)
+				response.JSON(w, apiErr.StatusCode, apiErr.Message, apiErr.Details)
 			case errors.APIError:
-				apiErr = e
+				response.JSON(w, e.StatusCode, e.Message, e.Details)
 			default:
-				apiErr = errors.NewAPIError(http.StatusInternalServerError, "Internal server error", nil)
+				response.InternalServerError(w, "Internal server error")
 			}
-			apiErr.Write(w)
 		}
 	}
 }

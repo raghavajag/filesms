@@ -1,9 +1,9 @@
 package filehdl
 
 import (
-	"encoding/json"
 	"filesms/internal/core/domain"
 	"filesms/internal/core/services/filesrv"
+	response "filesms/pkg/api"
 	"filesms/pkg/errors"
 	"filesms/pkg/middleware"
 	"net/http"
@@ -34,9 +34,8 @@ func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.NewAPIError(http.StatusInternalServerError, "Failed to upload file", nil)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(uploadedFile)
+	response.Success(w, "File uploaded successfully", uploadedFile)
+	return nil
 }
 func (h *FileHandler) GetFiles(w http.ResponseWriter, r *http.Request) error {
 	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
@@ -45,9 +44,12 @@ func (h *FileHandler) GetFiles(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.NewAPIError(http.StatusInternalServerError, "Failed to get files", err)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(files)
+	if len(files) == 0 {
+		response.Success(w, "No files found", []domain.File{})
+		return nil
+	}
+	response.Success(w, "Files retrieved successfully", files)
+	return nil
 }
 func (h *FileHandler) ShareFile(w http.ResponseWriter, r *http.Request) error {
 	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
@@ -69,9 +71,8 @@ func (h *FileHandler) ShareFile(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.NewAPIError(http.StatusInternalServerError, "Failed to share file", err)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]string{"share_url": shareURL})
+	response.Success(w, "File shared successfully", shareURL)
+	return nil
 }
 func (h *FileHandler) SearchFiles(w http.ResponseWriter, r *http.Request) error {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
@@ -106,9 +107,12 @@ func (h *FileHandler) SearchFiles(w http.ResponseWriter, r *http.Request) error 
 	if err != nil {
 		return errors.NewAPIError(http.StatusInternalServerError, "Failed to search files", err)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(files)
+	if len(files) == 0 {
+		response.Success(w, "No files found", []domain.File{})
+		return nil
+	}
+	response.Success(w, "Files retrieved successfully", files)
+	return nil
 }
 
 func (h *FileHandler) GetFile(w http.ResponseWriter, r *http.Request) error {
@@ -127,7 +131,6 @@ func (h *FileHandler) GetFile(w http.ResponseWriter, r *http.Request) error {
 	if userId != file.UserID {
 		return errors.NewAPIError(http.StatusUnauthorized, "Unauthorized access to file", nil)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(file)
+	response.Success(w, "File retrieved successfully", file)
+	return nil
 }

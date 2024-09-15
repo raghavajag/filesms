@@ -3,6 +3,7 @@ package authhdl
 import (
 	"encoding/json"
 	"filesms/internal/core/services/authsrv"
+	response "filesms/pkg/api"
 	"filesms/pkg/errors"
 	"filesms/pkg/middleware"
 	"filesms/pkg/validation"
@@ -38,9 +39,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.NewAPIError(http.StatusInternalServerError, "Failed to register user", nil)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(user)
+	response.Success(w, "User registered successfully", user)
+	return nil
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) error {
@@ -57,9 +57,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.NewAPIError(http.StatusUnauthorized, "Invalid credentials", nil)
 	}
+	response.Success(w, "User logged in successfully", token)
+	return nil
 
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) error {
 	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
@@ -69,6 +69,6 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) error {
 		return errors.NewAPIError(http.StatusInternalServerError, "Failed to fetch user", nil)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(user)
+	response.Success(w, "User retrieved successfully", user)
+	return nil
 }
