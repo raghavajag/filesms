@@ -6,18 +6,18 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
-
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func RunMigrations(db *sql.DB) error {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
+	/*
+		err := godotenv.Load()
+		if err != nil {
+			log.Println("Error loading .env file")
+		}
+	*/
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	database "filesms/db"
 	"filesms/internal/core/services/authsrv"
 	"filesms/internal/core/services/cleanupservice"
 	"filesms/internal/core/services/filesrv"
@@ -23,17 +22,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
+	/*
+		// if running locally load env variables from .env file
+			err := godotenv.Load()
+			if err != nil {
+				log.Fatal("Error loading .env file")
+			}
+	*/
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("Error connecting to the database: %v", err)
@@ -45,10 +45,12 @@ func main() {
 	defer db.Close()
 
 	// Run migrations
-	err = database.RunMigrations(db)
-	if err != nil {
-		log.Fatalf("Could not run migrations: %v", err)
-	}
+	/*
+		err = database.RunMigrations(db)
+		if err != nil {
+			log.Fatalf("Could not run migrations: %v", err)
+		}
+	*/
 
 	// Initialize Redis client
 	redisAddr := os.Getenv("REDIS_ADDR")
@@ -81,7 +83,7 @@ func main() {
 
 	// Initialize services
 	authService := authsrv.NewAuthService(userRepo, jwtMaker)
-	baseURL := "http://localhost:8080/files"
+	baseURL := "http://api:8080/files"
 	fileService := filesrv.NewFileService(fileRepo, localStorage, baseURL, redisCache)
 
 	// Initialize and start cleanup service, (10 seconds for testing)
