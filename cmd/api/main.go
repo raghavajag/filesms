@@ -11,6 +11,7 @@ import (
 	"filesms/internal/repositories/filerepo"
 	"filesms/internal/repositories/userrepo"
 
+	response "filesms/pkg/api"
 	redisStore "filesms/pkg/cache/redis"
 	"filesms/pkg/jwt"
 	"filesms/pkg/middleware"
@@ -100,7 +101,8 @@ func main() {
 	router := http.NewServeMux()
 
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+		json := map[string]string{"by": "21BCT0114 Raghava Jagarwal", "postman": "https://documenter.getpostman.com/view/11141903/2sAXqp83uR"}
+		response.Success(w, "Health check", json)
 	})
 
 	// Define routes
