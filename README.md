@@ -1,4 +1,4 @@
-# 21BCT0114_Backend
+# Filesms
 
 ### Environment Variables
 Change the `.env.example` file in the root directory to `.env`
@@ -10,8 +10,8 @@ http://3.108.254.214:8080/health
 
 1. Clone the repository:
    ```bash
-   git clone git@github.com:raghavajag/21BCT0114_Backend.git
-   cd 21BCT0114_Backend
+   git clone git@github.com:raghavajag/filesms.git
+   cd filesms
 
 2. Docker Compose:
    ```bash
